@@ -1,12 +1,14 @@
 // CameraPreview.js
-import React, { useState, useEffect, useRef } from "react";
-import { View, StyleSheet, TouchableOpacity, Text } from "react-native";
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import { View, StyleSheet, TouchableOpacity, Text, Image } from "react-native";
 import { Camera, useCameraDevice } from "react-native-vision-camera";
 
 const CameraPreview = () => {
   const [hasPermission, setHasPermission] = useState(false);
-  const cameraRef = useRef(null);
+  const cameraRef = useRef<Camera>(null);
   const device = useCameraDevice("back");
+  const [photoURI, setPhotoURI] = useState<null | string>(null);
+  const [photo, setPhoto] = useState<any>({});
 
   useEffect(() => {
     const requestCameraPermission = async () => {
@@ -14,6 +16,19 @@ const CameraPreview = () => {
       setHasPermission(permission === "granted");
     };
     requestCameraPermission();
+  }, []);
+
+  const handleTakePhoto = useCallback(async () => {
+    try {
+      const photo = await cameraRef.current?.takePhoto();
+      if (photo) {
+        console.log("Photo", photo);
+        setPhotoURI(`file://${photo.path}`);
+        setPhoto(photo);
+      }
+    } catch (error) {
+      alert(`ERROR: ${error}`);
+    }
   }, []);
 
   if (device == null)
@@ -25,26 +40,45 @@ const CameraPreview = () => {
 
   return (
     <View style={styles.container}>
-      {hasPermission ? (
-        <Camera
-          style={StyleSheet.absoluteFill}
-          device={device}
-          isActive={true}
-          ref={cameraRef}
+      {photoURI && (
+        <Image
+          source={{ uri: photoURI }}
+          style={{ width: 300, height: 300, marginBottom: 20 }}
         />
-      ) : (
-        <Text style={styles.permissionText}>No camera permission</Text>
       )}
-      <View style={styles.overlay}>
-        <Text style={{...styles.permissionText, fontSize: 24, marginBottom: 8}}>ถ่ายรูปมาตรให้อยู่ในวงกลม</Text>
-        <View style={styles.circle} />
-      </View>
-      <TouchableOpacity
-        style={styles.captureButton}
-        onPress={() => console.log("Capture")}
-      >
-        <Text style={styles.captureButtonText}>ถ่าย</Text>
-      </TouchableOpacity>
+      {!photoURI && (
+        <>
+          {hasPermission ? (
+            <Camera
+              style={StyleSheet.absoluteFill}
+              device={device}
+              isActive={true}
+              ref={cameraRef}
+              photo={true}
+            />
+          ) : (
+            <Text style={styles.permissionText}>No camera permission</Text>
+          )}
+          <View style={styles.overlay}>
+            <Text
+              style={{
+                ...styles.permissionText,
+                fontSize: 24,
+                marginBottom: 8,
+              }}
+            >
+              ถ่ายรูปมาตรให้อยู่ในวงกลม
+            </Text>
+            <View style={styles.circle} />
+          </View>
+          <TouchableOpacity
+            style={styles.captureButton}
+            onPress={() => handleTakePhoto()}
+          >
+            <Text style={styles.captureButtonText}></Text>
+          </TouchableOpacity>
+        </>
+      )}
     </View>
   );
 };
@@ -85,7 +119,9 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: "white",
+    borderWidth: 2,
+    borderColor: "white",
+    backgroundColor: "red",
     justifyContent: "center",
     alignItems: "center",
   },
