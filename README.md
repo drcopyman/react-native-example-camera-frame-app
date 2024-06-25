@@ -12,3 +12,7 @@ yarn android
 
 โปรดใช้ NDK Version 26.1.10909125 ขึ้นไป
 
+
+
+https://github.com/drcopyman/react-native-example-camera-frame-app/assets/68768252/65d73c20-0f99-41db-a01c-685837a402f2
+
